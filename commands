@@ -11,6 +11,13 @@ Get-Process | Where-Object { $_.ProcessName -like "*uvicorn*" }
 Get-Process | Where-Object { $_.ProcessName -like "*uvicorn*" } | Stop-Process -Force
 
 
+# Para correr por primera vez
+## Crear un virtual environment e instalar los requerimeintos
+python -m venv venv
+venv/Scripts/activate
+pip install -r requirements.txt
+# La carpeta venv NO SE SUBE A GIT, por lo que se debe crear en cada máquina igual que la carpeta .idea
+
 ## Para correr el backend en uvicorn desde la carpeta UniVerse_Backend
 venv/Scripts/activate
 ## Ya en el virtual environment
