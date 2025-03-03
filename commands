@@ -1,13 +1,17 @@
-# Ver qué está escuchando en un puerto específico
+# Si el back no está actualizando, los últimso cambios no se ven reflejados en los endpoints o no funciona correctamente, se puede hacer lo siguiente:
+## Ver qué está escuchando en un puerto específico
 netstat -ano | Select-String ":8000"
-# Ver qué son esos procesos
+## Ver qué son esos procesos
 Get-Process -Id 40888, 44784, 9924 (los id de los procesos)
-# Parar los uvicorn instances
+## Parar los uvicorn instances
 Get-Process | Where-Object { $_.ProcessName -like "*python*" } | Stop-Process -Force
 
-# Ver que no esté corriendo en background y pararlo
+## Ver que no esté corriendo en background y pararlo
 Get-Process | Where-Object { $_.ProcessName -like "*uvicorn*" }
 Get-Process | Where-Object { $_.ProcessName -like "*uvicorn*" } | Stop-Process -Force
 
-#Correr uvicorn
+
+## Para correr el backend en uvicorn desde la carpeta UniVerse_Backend
+venv/Scripts/activate
+## Ya en el virtual environment
 uvicorn main:app --reload
