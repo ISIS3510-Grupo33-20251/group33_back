@@ -16,8 +16,12 @@ class User(BaseModel):
     preferences: Optional[Dict] = {}  # JSON-like dictionary
     subscription_status: bool = False  # Default to false
     location: Optional[Location] = None  # Nested location object
-    tasks: Optional[List[str]] = []  # List of task IDs
+    tasks: List[str] = []  # List of task IDs
+    documents: List[str] = []  # List of documents IDs
+    teams: List[str] = []  # List of team IDs
+    friends: List[str] = []  # List of user IDs
+    flashcard_decks: List[str] = []  # List of flashcard deck IDs
 
-    class Config:
+class Config:
         populate_by_name = True
         from_attributes = True  # Allows MongoDB documents to be converted automatically

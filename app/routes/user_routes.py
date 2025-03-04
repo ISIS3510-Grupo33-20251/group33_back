@@ -7,6 +7,9 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 users_collection = database["users"]
 tasks_collection = database["tasks"]  # Reference to tasks collection for fetching user's tasks
+documents_collection = database["documents"]  # Reference to documents collection for fetching user's docs
+teams_collection = database["teams"]  # Reference to teams collection for fetching user's teams
+flashcard_decks_collection = database["flashcard_decks"]  # Reference to flashcard decks collection for fetching user's flashcard decks
 
 # Create a new user
 @router.post("/", response_model=User)
@@ -126,3 +129,248 @@ async def remove_task_from_user(user_id: str, task_id: str):
 
     return {"message": "Task removed from user successfully"}
 
+# Get all documents for a specific user
+@router.get("/{user_id}/documents")
+async def get_user_docs(user_id: str):
+    # Fetch the user document
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get the user's list of docs IDs (if they exist)
+    docs_ids = user.get("documents", [])
+
+    # Convert doc ID strings to ObjectId for MongoDB query
+    object_ids = [ObjectId(document_id) for document_id in docs_ids]
+
+    # Fetch docs that match those IDs
+    docs = await documents_collection.find({"_id": {"$in": object_ids}}).to_list(100)
+
+    # Convert ObjectId to string for API response
+    for doc in docs:
+        doc["_id"] = str(doc["_id"])
+
+    return docs
+
+# Add a doc to a user
+@router.post("/{user_id}/documents/{document_id}")
+async def add_document_to_user(user_id: str, document_id: str):
+    # Check if the user exists
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the document exists
+    document = await documents_collection.find_one({"_id": ObjectId(document_id)})
+    if not document:
+        raise HTTPException(status_code=404, detail="document not found")
+
+    # Check if the document is already in the user's document list
+    if document_id in user.get("documents", []):
+        raise HTTPException(status_code=400, detail="Document already assigned to user")
+
+    # Add document to user's document list
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$push": {"documents": document_id}}
+    )
+
+    return {"message": "Document added to user successfully"}
+
+@router.delete("/{user_id}/documents/{document_id}")
+async def remove_document_from_user(user_id: str, document_id: str):
+    # Check if the user exists
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the document exists
+    document = await documents_collection.find_one({"_id": ObjectId(document_id)})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    # Check if the document is in the user's document list
+    if document_id not in user.get("documents", []):
+        raise HTTPException(status_code=400, detail="Document not assigned to user")
+
+    # Remove the document from the user's document list
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$pull": {"documents": document_id}}
+    )
+
+    return {"message": "Document removed from user successfully"}
+
+# Get all teams for a specific user
+@router.get("/{user_id}/teams")
+async def get_user_teams(user_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    team_ids = user.get("teams", [])
+    object_ids = [ObjectId(team_id) for team_id in team_ids]
+    teams = await teams_collection.find({"_id": {"$in": object_ids}}).to_list(100)
+
+    for team in teams:
+        team["_id"] = str(team["_id"])
+
+    return teams
+
+# Add a team to a user
+@router.post("/{user_id}/teams/{team_id}")
+async def add_team_to_user(user_id: str, team_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    team = await teams_collection.find_one({"_id": ObjectId(team_id)})
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    if team_id in user.get("teams", []):
+        raise HTTPException(status_code=400, detail="Team already assigned to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$push": {"teams": team_id}}
+    )
+
+    return {"message": "Team added to user successfully"}
+
+# Remove a team from a user
+@router.delete("/{user_id}/teams/{team_id}")
+async def remove_team_from_user(user_id: str, team_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    team = await teams_collection.find_one({"_id": ObjectId(team_id)})
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    if team_id not in user.get("teams", []):
+        raise HTTPException(status_code=400, detail="Team not assigned to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$pull": {"teams": team_id}}
+    )
+
+    return {"message": "Team removed from user successfully"}
+
+# Get all friends for a specific user
+@router.get("/{user_id}/friends")
+async def get_user_friends(user_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    friend_ids = user.get("friends", [])
+    object_ids = [ObjectId(friend_id) for friend_id in friend_ids]
+    friends = await users_collection.find({"_id": {"$in": object_ids}}).to_list(100)
+
+    for friend in friends:
+        friend["_id"] = str(friend["_id"])
+
+    return friends
+
+# Add a friend to a user
+@router.post("/{user_id}/friends/{friend_id}")
+async def add_friend_to_user(user_id: str, friend_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    friend = await users_collection.find_one({"_id": ObjectId(friend_id)})
+    if not friend:
+        raise HTTPException(status_code=404, detail="Friend not found")
+
+    if friend_id in user.get("friends", []):
+        raise HTTPException(status_code=400, detail="Friend already added to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$push": {"friends": friend_id}}
+    )
+
+    return {"message": "Friend added to user successfully"}
+
+# Remove a friend from a user
+@router.delete("/{user_id}/friends/{friend_id}")
+async def remove_friend_from_user(user_id: str, friend_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    friend = await users_collection.find_one({"_id": ObjectId(friend_id)})
+    if not friend:
+        raise HTTPException(status_code=404, detail="Friend not found")
+
+    if friend_id not in user.get("friends", []):
+        raise HTTPException(status_code=400, detail="Friend not added to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$pull": {"friends": friend_id}}
+    )
+
+    return {"message": "Friend removed from user successfully"}
+
+# Get all flashcard decks for a specific user
+@router.get("/{user_id}/flashcard_decks")
+async def get_user_flashcard_decks(user_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    deck_ids = user.get("flashcard_decks", [])
+    object_ids = [ObjectId(deck_id) for deck_id in deck_ids]
+    flashcard_decks = await flashcard_decks_collection.find({"_id": {"$in": object_ids}}).to_list(100)
+
+    for deck in flashcard_decks:
+        deck["_id"] = str(deck["_id"])
+
+    return
+
+# Add a flashcard deck to a user
+@router.post("/{user_id}/flashcard_decks/{deck_id}")
+async def add_flashcard_deck_to_user(user_id: str, deck_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    deck = await flashcard_decks_collection.find_one({"_id": ObjectId(deck_id)})
+    if not deck:
+        raise HTTPException(status_code=404, detail="Flashcard deck not found")
+
+    if deck_id in user.get("flashcard_decks", []):
+        raise HTTPException(status_code=400, detail="Flashcard deck already assigned to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$push": {"flashcard_decks": deck_id}}
+    )
+
+    return {"message": "Flashcard deck added to user successfully"}
+
+# Remove a flashcard deck from a user
+@router.delete("/{user_id}/flashcard_decks/{deck_id}")
+async def remove_flashcard_deck_from_user(user_id: str, deck_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    deck = await flashcard_decks_collection.find_one({"_id": ObjectId(deck_id)})
+    if not deck:
+        raise HTTPException(status_code=404, detail="Flashcard deck not found")
+
+    if deck_id not in user.get("flashcard_decks", []):
+        raise HTTPException(status_code=400, detail="Flashcard deck not assigned to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$pull": {"flashcard_decks": deck_id}}
+    )
+
+    return {"message": "Flashcard deck removed from user successfully"}
