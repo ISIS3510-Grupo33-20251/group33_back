@@ -1,16 +1,19 @@
-#FAST API entry point
 from fastapi import FastAPI
-from app.routes.task_routes import router as task_router
-from app.routes.user_routes import router as user_router
-from app.routes.document_routes import router as document_router
+from app.routes import document_routes, user_routes, task_routes, team_routes, kanban_board_routes, schedule_routes, flashcard_deck_routes, reminder_routes
 
-app = FastAPI()
+# Inicializar la aplicación FastAPI
+app = FastAPI(title="Group33 Backend")
 
-app.include_router(user_router)
-app.include_router(task_router)
-app.include_router(document_router)
-
+# Incluir las rutas
+app.include_router(user_routes.router)
+app.include_router(task_routes.router)
+app.include_router(document_routes.router)
+app.include_router(team_routes.router)
+app.include_router(kanban_board_routes.router)
+app.include_router(schedule_routes.router)
+app.include_router(flashcard_deck_routes.router)
+app.include_router(reminder_routes.router)
 
 @app.get("/")
-def home():
-    return {"message": "Welcome to the UniVerse API"}
+def root():
+    return {"message": "🚀 API funcionando correctamente!"}
