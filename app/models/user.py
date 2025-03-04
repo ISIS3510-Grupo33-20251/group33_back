@@ -21,6 +21,8 @@ class User(BaseModel):
     teams: List[str] = []  # List of team IDs
     friends: List[str] = []  # List of user IDs
     flashcard_decks: List[str] = []  # List of flashcard deck IDs
+    courses: List[str] = []  # List of course IDs
+    notes: List[str] = []  # List of note IDs
 
 class Config:
         populate_by_name = True

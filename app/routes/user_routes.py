@@ -10,6 +10,8 @@ tasks_collection = database["tasks"]  # Reference to tasks collection for fetchi
 documents_collection = database["documents"]  # Reference to documents collection for fetching user's docs
 teams_collection = database["teams"]  # Reference to teams collection for fetching user's teams
 flashcard_decks_collection = database["flashcard_decks"]  # Reference to flashcard decks collection for fetching user's flashcard decks
+courses_collection = database["courses"]  # Reference to courses collection for fetching user's courses
+notes_collection = database["notes"]  # Reference to notes collection for fetching user's notes
 
 # Create a new user
 @router.post("/", response_model=User)
@@ -374,3 +376,119 @@ async def remove_flashcard_deck_from_user(user_id: str, deck_id: str):
     )
 
     return {"message": "Flashcard deck removed from user successfully"}
+
+# Get all courses for a specific user
+@router.get("/{user_id}/courses")
+async def get_user_courses(user_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    course_ids = user.get("courses", [])
+    object_ids = [ObjectId(course_id) for course_id in course_ids]
+    courses = await courses_collection.find({"_id": {"$in": object_ids}}).to_list(100)
+
+    for course in courses:
+        course["_id"] = str(course["_id"])
+
+    return courses
+
+# Add a course to a user
+@router.post("/{user_id}/courses/{course_id}")
+async def add_course_to_user(user_id: str, course_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    course = await courses_collection.find_one({"_id": ObjectId(course_id)})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    if course_id in user.get("courses", []):
+        raise HTTPException(status_code=400, detail="Course already assigned to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$push": {"courses": course_id}}
+    )
+
+    return {"message": "Course added to user successfully"}
+
+# Remove a course from a user
+@router.delete("/{user_id}/courses/{course_id}")
+async def remove_course_from_user(user_id: str, course_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    course = await courses_collection.find_one({"_id": ObjectId(course_id)})
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    if course_id not in user.get("courses", []):
+        raise HTTPException(status_code=400, detail="Course not assigned to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$pull": {"courses": course_id}}
+    )
+
+    return {"message": "Course removed from user successfully"}
+
+# Get all notes for a specific user
+@router.get("/{user_id}/notes")
+async def get_user_notes(user_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    note_ids = user.get("notes", [])
+    object_ids = [ObjectId(note_id) for note_id in note_ids]
+    notes = await notes_collection.find({"_id": {"$in": object_ids}}).to_list(100)
+
+    for note in notes:
+        note["_id"] = str(note["_id"])
+
+    return notes
+
+# Add a note to a user
+@router.post("/{user_id}/notes/{note_id}")
+async def add_note_to_user(user_id: str, note_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    note = await notes_collection.find_one({"_id": ObjectId(note_id)})
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    if note_id in user.get("notes", []):
+        raise HTTPException(status_code=400, detail="Note already assigned to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$push": {"notes": note_id}}
+    )
+
+    return {"message": "Note added to user successfully"}
+
+# Remove a note from a user
+@router.delete("/{user_id}/notes/{note_id}")
+async def remove_note_from_user(user_id: str, note_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    note = await notes_collection.find_one({"_id": ObjectId(note_id)})
+    if not note:
+        raise HTTPException(status_code=404, detail="Note not found")
+
+    if note_id not in user.get("notes", []):
+        raise HTTPException(status_code=400, detail="Note not assigned to user")
+
+    await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$pull": {"notes": note_id}}
+    )
+
+    return {"message": "Note removed from user successfully"}
