@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-class Kanban_board(BaseModel):
+class KanbanBoard(BaseModel):
     board_id: Optional[str] = Field(default=None, alias="_id")  # MongoDB ObjectId as string
     name: str
     team_id: str  # The team this board belongs to

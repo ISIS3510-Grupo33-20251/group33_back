@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.database import database
-from app.models.flashcard_deck import FlashcardDeck
+from app.models.flashcardDeck import FlashcardDeck
 from bson import ObjectId
 
 router = APIRouter(prefix="/flashcard_decks", tags=["Flashcard Decks"])

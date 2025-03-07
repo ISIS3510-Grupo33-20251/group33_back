@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.database import database
-from app.models.kanban_board import KanbanBoard
+from app.models.kanbanBoard import KanbanBoard
 from bson import ObjectId
 
 router = APIRouter(prefix="/kanban", tags=["Kanban Board"])
