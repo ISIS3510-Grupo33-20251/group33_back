@@ -6,6 +6,7 @@ class Note(BaseModel):
     note_id: str = Field(default=None, alias="_id")
     title: str
     subject: str
+    content: str
     tags: List[str] = []
     created_date: datetime
     last_modified: datetime
