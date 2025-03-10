@@ -1,6 +1,8 @@
+import uuid
+
 from fastapi import APIRouter, HTTPException
 from app.database import database
-from app.models.user import User
+from app.models.user import User, LoginCredentials, RegisterCredentials
 from bson import ObjectId
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -492,3 +494,57 @@ async def remove_note_from_user(user_id: str, note_id: str):
     )
 
     return {"message": "Note removed from user successfully"}
+
+# Authentication routes
+@router.post("/auth/login")
+async def login(credentials: LoginCredentials):
+    user = await users_collection.find_one({"email": credentials.email})
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # In production, use proper password hashing
+    if user["password"] != credentials.password:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Generate a simple token (in production, use JWT)
+    token = str(uuid.uuid4())
+
+    return {
+        "token": token,
+        "userId": str(user["_id"]),
+        "email": user["email"],
+        "name": user["name"]
+    }
+
+@router.post("/auth/register")
+async def register(user_data: RegisterCredentials):
+    existing_user = await users_collection.find_one({"email": user_data.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    user_dict = {
+        "name": user_data.name,
+        "email": user_data.email,
+        "password": user_data.password,
+        "preferences": {},
+        "subscription_status": False,
+        "tasks": [],
+        "documents": [],
+        "teams": [],
+        "friends": [],
+        "flashcard_decks": [],
+        "courses": [],
+        "notes": []
+    }
+
+    result = await users_collection.insert_one(user_dict)
+
+    # Generate token
+    token = str(uuid.uuid4())
+
+    return {
+        "token": token,
+        "userId": str(result.inserted_id),
+        "email": user_data.email,
+        "name": user_data.name
+    }

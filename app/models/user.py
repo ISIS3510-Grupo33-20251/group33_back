@@ -8,6 +8,16 @@ class Location(BaseModel):
     latitude: float
     longitude: float
 
+# Login and Register Credentials Schema
+class LoginCredentials(BaseModel):
+    email: EmailStr
+    password: str
+
+class RegisterCredentials(BaseModel):
+    email: EmailStr
+    name: str
+    password: str
+
 # User Schema
 class User(BaseModel):
     user_id: Optional[str] = Field(default=None, alias="_id")  # MongoDB ObjectId as string
