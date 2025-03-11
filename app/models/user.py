@@ -7,6 +7,8 @@ from typing import List
 class Location(BaseModel):
     latitude: float
     longitude: float
+    last_updated: Optional[float] = None  # Unix timestamp
+    accuracy: Optional[float] = None
 
 # Login and Register Credentials Schema
 class LoginCredentials(BaseModel):
