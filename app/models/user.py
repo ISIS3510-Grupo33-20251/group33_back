@@ -7,12 +7,25 @@ from typing import List
 class Location(BaseModel):
     latitude: float
     longitude: float
+    last_updated: Optional[float] = None  # Unix timestamp
+    accuracy: Optional[float] = None
+
+# Login and Register Credentials Schema
+class LoginCredentials(BaseModel):
+    email: EmailStr
+    password: str
+
+class RegisterCredentials(BaseModel):
+    email: EmailStr
+    name: str
+    password: str
 
 # User Schema
 class User(BaseModel):
     user_id: Optional[str] = Field(default=None, alias="_id")  # MongoDB ObjectId as string
     name: str
     email: EmailStr  # Enforces valid email format
+    password: str # Password
     preferences: Optional[Dict] = {}  # JSON-like dictionary
     subscription_status: bool = False  # Default to false
     location: Optional[Location] = None  # Nested location object
