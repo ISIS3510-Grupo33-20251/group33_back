@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.database import database
-from app.models.friend_request import FriendRequest, FriendRequestStatus
+from app.models.friendRequest import FriendRequest, FriendRequestStatus
 from bson import ObjectId
 import time
 
@@ -33,6 +33,46 @@ async def create_friend_request(sender_id: str, receiver_id: str):
     request["_id"] = str(result.inserted_id)
 
     return request
+
+# Create a new friend request by email
+@router.post("/by_email", response_model=FriendRequest)
+async def create_friend_request_by_email(request: dict):
+    sender_id = request.get("senderId")
+    email = request.get("email")
+
+    if not sender_id:
+        raise HTTPException(status_code=400, detail="Sender ID is required")
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+
+    # Find user by email
+    receiver = await users_collection.find_one({"email": email})
+    if not receiver:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    receiver_id = str(receiver["_id"])
+
+    existing = await friend_requests_collection.find_one({
+        "sender_id": sender_id,
+        "receiver_id": receiver_id,
+        "status": FriendRequestStatus.PENDING
+    })
+
+    if existing:
+        raise HTTPException(status_code=400, detail="Friend request already sent")
+
+    # Create new request
+    request_data = {
+        "sender_id": sender_id,
+        "receiver_id": receiver_id,
+        "status": FriendRequestStatus.PENDING,
+        "created_at": time.time()
+    }
+
+    result = await friend_requests_collection.insert_one(request_data)
+    request_data["_id"] = str(result.inserted_id)
+
+    return request_data
 
 # Get pending requests for a user
 @router.get("/pending/{user_id}")
