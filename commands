@@ -22,3 +22,6 @@ pip install -r requirements.txt
 venv/Scripts/activate
 ## Ya en el virtual environment
 uvicorn main:app --reload
+
+#Ejecutar como server
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
