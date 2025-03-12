@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Path
 from app.database import database
 from app.models.user import User, LoginCredentials, RegisterCredentials
 from bson import ObjectId
@@ -14,6 +14,27 @@ teams_collection = database["teams"]  # Reference to teams collection for fetchi
 flashcard_decks_collection = database["flashcard_decks"]  # Reference to flashcard decks collection for fetching user's flashcard decks
 courses_collection = database["courses"]  # Reference to courses collection for fetching user's courses
 notes_collection = database["notes"]  # Reference to notes collection for fetching user's notes
+
+# Generate user flashcards
+import flashcards as fc
+@router.get("/{user_id}/{subject:path}/flash")
+async def get_flashcards(
+    user_id: str,
+    subject: str = Path(..., title="Subject", description="El subject que puede contener barras")
+):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    note_ids = user.get("notes", [])
+    object_ids = [ObjectId(note_id) for note_id in note_ids]
+    notes = await notes_collection.find({"_id": {"$in": object_ids}}).to_list(100)
+
+    info = ''
+    for note in notes:
+        if subject in note['subject']:
+            info += "\n" + note['content']
+    return fc.generar_flashcards(info)
 
 # Create a new user
 @router.post("/", response_model=User)
