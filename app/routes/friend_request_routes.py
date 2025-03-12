@@ -10,7 +10,7 @@ friend_requests_collection = database["friend_requests"]
 users_collection = database["users"]
 
 # Create a new friend request
-@router.post("/", response_model=FriendRequest)
+@router.post("/", )
 async def create_friend_request(sender_id: str, receiver_id: str):
     existing = await friend_requests_collection.find_one({
         "sender_id": sender_id,
