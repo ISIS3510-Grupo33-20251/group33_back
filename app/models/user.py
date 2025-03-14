@@ -25,7 +25,7 @@ class User(BaseModel):
     user_id: Optional[str] = Field(default=None, alias="_id")  # MongoDB ObjectId as string
     name: str
     email: EmailStr  # Enforces valid email format
-    password: str # Password
+    password: str  # Password
     preferences: Optional[Dict] = {}  # JSON-like dictionary
     subscription_status: bool = False  # Default to false
     location: Optional[Location] = None  # Nested location object

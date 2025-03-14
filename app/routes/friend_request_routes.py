@@ -116,3 +116,22 @@ async def accept_friend_request(request_id: str):
     )
 
     return {"message": "Friend request accepted"}
+
+# reject a friend request
+@router.post("/{request_id}/reject")
+async def reject_friend_request(request_id: str):
+    request = await friend_requests_collection.find_one({"_id": ObjectId(request_id)})
+
+    if not request:
+        raise HTTPException(status_code=404, detail="Friend request not found")
+
+    if request["status"] != FriendRequestStatus.PENDING:
+        raise HTTPException(status_code=400, detail="Request already processed")
+
+    # Update request status to rejected
+    await friend_requests_collection.update_one(
+        {"_id": ObjectId(request_id)},
+        {"$set": {"status": FriendRequestStatus.REJECTED}}
+    )
+
+    return {"message": "Friend request rejected"}

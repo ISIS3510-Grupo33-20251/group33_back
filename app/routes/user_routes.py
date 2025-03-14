@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, Path
 from app.database import database
-from app.models.user import User, LoginCredentials, RegisterCredentials
+from app.models.user import User, LoginCredentials, RegisterCredentials, Location
 from bson import ObjectId
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -569,3 +569,63 @@ async def register(user_data: RegisterCredentials):
         "email": user_data.email,
         "name": user_data.name
     }
+
+# Update user location
+@router.put("/{user_id}/location")
+async def update_user_location(
+        user_id: str,
+        location: Location):
+
+    # Update just the location
+    result = await users_collection.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"location": location.dict()}}
+    )
+
+    if result.matched_count:
+        return {"message": "Location updated successfully"}
+    raise HTTPException(status_code=404, detail="User not found")
+
+# Get friends with location data
+@router.get("/{user_id}/friends/location")
+async def get_friends_with_location(
+        user_id: str):
+
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get user's friends
+    friend_ids = user.get("friends", [])
+    if not friend_ids:
+        return []
+
+    # Convert friend IDs to ObjectId
+    friend_object_ids = [ObjectId(friend_id) for friend_id in friend_ids]
+
+    # Find friends with location data
+    friends_with_location = await users_collection.find({
+        "_id": {"$in": friend_object_ids},
+        "location": {"$exists": True, "$ne": None}
+    }).to_list(100)
+
+    # Format the response
+    result = []
+    for friend in friends_with_location:
+        friend_dto = {
+            "_id": str(friend["_id"]),
+            "name": friend["name"],
+            "email": friend["email"],
+            "password": friend["password"],
+            "location": friend.get("location")
+        }
+
+        # Add optional fields if they exist
+        if "preferences" in friend:
+            friend_dto["preferences"] = friend["preferences"]
+        if "subscription_status" in friend:
+            friend_dto["subscription_status"] = friend["subscription_status"]
+
+        result.append(friend_dto)
+
+    return result
