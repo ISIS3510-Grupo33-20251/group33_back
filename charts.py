@@ -8,10 +8,11 @@ def get_key_url(url):
     if 'flash' in url:
         return 'users flashcards'
     url = url.replace("http://", '').strip()
-    if '.' in url:
-        return ''
     response = ''
     split = url.split('/')
+    if '.' in "".join(split[1:]):
+        return ''
+
     for i in range(1, len(split), 2):
         response += split[i] + ' '
     return response.strip()
@@ -49,7 +50,7 @@ def generar_graficos():
     
     # Gráfico 1: Código con más fallos (asumiendo fallos como códigos 4xx y 5xx)
     failed_urls = [get_key_url(url) + " " + translation[m] for url, resp, m in zip(urls, responses, methods) if resp >= 400 and get_key_url(url) != '']
-    fail_counts = Counter(failed_urls)
+    fail_counts = dict(Counter(failed_urls).most_common())  # Convierte en diccionario ordenado
     fig1 = go.Figure(data=[go.Bar(x=list(fail_counts.keys()), y=list(fail_counts.values()))])
     fig1.update_layout(title="Features with the most errors")
     
