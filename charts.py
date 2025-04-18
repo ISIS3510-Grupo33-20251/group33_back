@@ -18,7 +18,7 @@ def get_key_url(url):
     return response.strip()
 
 def parse_logs(log_file):
-    with open(log_file, "r") as file:
+    with open(log_file, "r", encoding = 'latin1') as file:
         logs = file.readlines()
     
     data = []
