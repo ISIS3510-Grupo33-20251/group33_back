@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from app.routes import document_routes, user_routes, task_routes, team_routes, kanban_board_routes, schedule_routes, flashcard_deck_routes, reminder_routes, course_routes, friend_request_routes, note_routes
+from app.routes import document_routes, user_routes, task_routes, team_routes, kanban_board_routes, schedule_routes, flashcard_deck_routes, reminder_routes, course_routes, friend_request_routes, note_routes, meeting_routes
 
 import logging
 
@@ -33,6 +33,7 @@ app.include_router(reminder_routes.router)
 app.include_router(course_routes.router)
 app.include_router(friend_request_routes.router)
 app.include_router(note_routes.router)
+app.include_router(meeting_routes.router)
 
 
 
