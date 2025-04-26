@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Path
 from app.database import database
 from app.models.user import User, LoginCredentials, RegisterCredentials, Location
 from bson import ObjectId
+from app.models.schedule import Schedule  # Asegúrate de que el modelo Schedule esté importado
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -14,6 +15,7 @@ teams_collection = database["teams"]  # Reference to teams collection for fetchi
 flashcard_decks_collection = database["flashcard_decks"]  # Reference to flashcard decks collection for fetching user's flashcard decks
 courses_collection = database["courses"]  # Reference to courses collection for fetching user's courses
 notes_collection = database["notes"]  # Reference to notes collection for fetching user's notes
+schedules_collection = database["schedules"]  # Reference to schedules collection for fetching user's schedules
 
 # Generate user flashcards
 import flashcards as fc
@@ -629,3 +631,25 @@ async def get_friends_with_location(
         result.append(friend_dto)
 
     return result
+
+# Get or create a schedule for a specific user
+@router.get("/{user_id}/schedule")
+async def get_or_create_user_schedule(user_id: str):
+    # Check if the user exists
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the user already has a schedule
+    schedule = await schedules_collection.find_one({"user_id": user_id})
+    
+    if schedule:
+        return {"schedule_id": str(schedule["_id"])}  # Return existing schedule ID
+
+    # Create a new schedule if none exists
+    new_schedule = Schedule(user_id=user_id)  # Asegúrate de que el modelo Schedule tenga un campo user_id
+    schedule_dict = new_schedule.model_dump(by_alias=True, exclude={"schedule_id"})
+    result = await schedules_collection.insert_one(schedule_dict)
+    schedule_dict["_id"] = str(result.inserted_id)
+
+    return {"schedule_id": schedule_dict["_id"]}  # Return new schedule ID

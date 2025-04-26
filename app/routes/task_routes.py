@@ -82,3 +82,34 @@ async def assign_task_to_user(task_id: str, user_id: str):
         )
 
     return {"message": "Task assigned to user successfully"}
+
+# Get task priority distribution by team
+@router.get("/priority-distribution")
+async def get_task_priority_distribution():
+    # Get all tasks
+    tasks = await tasks_collection.find().to_list(100)
+    
+    # Initialize distribution dictionary
+    distribution = {
+        "low": 0,
+        "medium": 0,
+        "high": 0
+    }
+    
+    # Count tasks by priority
+    for task in tasks:
+        priority = task.get("priority", "medium")  # Default to medium if not specified
+        distribution[priority] += 1
+    
+    # Calculate percentages
+    total_tasks = sum(distribution.values())
+    if total_tasks > 0:
+        distribution = {
+            priority: (count / total_tasks) * 100 
+            for priority, count in distribution.items()
+        }
+    
+    return {
+        "distribution": distribution,
+        "total_tasks": total_tasks
+    }

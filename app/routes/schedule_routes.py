@@ -17,6 +17,11 @@ async def create_schedule(schedule: Schedule):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # Ensure the user_id is set in the schedule
+    if not schedule.user_id:
+        raise HTTPException(status_code=400, detail="User ID must be provided")
+    schedule.user_id = str(user["_id"])  # Asegúrate de que el user_id esté presente
+
     schedule_dict = schedule.model_dump(by_alias=True, exclude={"schedule_id"})
     result = await schedules_collection.insert_one(schedule_dict)
     schedule_dict["_id"] = str(result.inserted_id)
