@@ -118,4 +118,13 @@ def generar_graficos():
     fig6 = go.Figure(data=[go.Bar(x=list(subject_counts.keys()), y=list(subject_counts.values()))])
     fig6.update_layout(title="Most used subjects in flashcards")
 
-    return [pio.to_html(fig, full_html=False) for fig in [fig1, fig2, fig3, fig4, fig5, fig6]]
+    # Gráfico 7: Hora más común para programar reuniones
+    meeting_hours = [ts.hour for ts, method, url, resp in zip(timestamps, methods, urls, responses)
+                     if method == "POST" and "/meetings/" in url and resp == 200]
+
+    fig7 = go.Figure(data=[go.Histogram(x=meeting_hours, nbinsx=24)])
+    fig7.update_layout(title="Hours with the most scheduled meetings",
+                       xaxis_title="Hour of the day",
+                       yaxis_title="Number of meetings scheduled")
+
+    return [pio.to_html(fig, full_html=False) for fig in [fig1, fig2, fig3, fig4, fig5, fig6, fig7]]
