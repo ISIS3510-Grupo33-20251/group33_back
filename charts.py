@@ -104,4 +104,18 @@ def generar_graficos():
     most_time_spent = sorted(time_spent.items(), key=lambda x: x[1], reverse=True)[:5]
     fig5 = go.Figure(data=[go.Bar(x=[x[0] for x in most_time_spent], y=[x[1] for x in most_time_spent])])
     fig5.update_layout(title="Most used features")
-    return [pio.to_html(fig, full_html=False) for fig in [fig1, fig2, fig3, fig4, fig5]]
+
+    # Gráfico 6: Subjects más usados en flashcards
+    subject_pattern = re.compile(r"/users/[\w\d]+/([\w\d]+)/flash")
+    subject_counts = Counter()
+
+    for url in urls:
+        match = subject_pattern.search(url)
+        if match:
+            subject = match.group(1)
+            subject_counts[subject] += 1
+
+    fig6 = go.Figure(data=[go.Bar(x=list(subject_counts.keys()), y=list(subject_counts.values()))])
+    fig6.update_layout(title="Most used subjects in flashcards")
+
+    return [pio.to_html(fig, full_html=False) for fig in [fig1, fig2, fig3, fig4, fig5, fig6]]
