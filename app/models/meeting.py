@@ -12,6 +12,7 @@ class Meeting(BaseModel):
     meeting_link: Optional[str] = None
     host_id: str  # The user who created the meeting
     participants: List[str] = []  # List of user IDs attending
+    color: Optional[str] = "#4285F4"  # Default color in hex format (Google Blue)
 
     class Config:
         from_attributes = True
