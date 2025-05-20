@@ -36,6 +36,7 @@ class User(BaseModel):
     flashcard_decks: List[str] = []  # List of flashcard deck IDs
     courses: List[str] = []  # List of course IDs
     notes: List[str] = []  # List of note IDs
+    kanban_id: Optional[str] = None  # ID del kanban del usuario
 
 class Config:
         populate_by_name = True
