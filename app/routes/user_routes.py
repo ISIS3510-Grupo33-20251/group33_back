@@ -654,10 +654,24 @@ async def get_or_create_user_schedule(user_id: str):
 
     return {"schedule_id": schedule_dict["_id"]}  # Return new schedule ID
 
-# Get user's kanban ID
+# Get or create a kanban for a specific user
 @router.get("/{user_id}/kanban")
-async def get_user_kanban(user_id: str):
+async def get_or_create_user_kanban(user_id: str):
+    # Check if the user exists
     user = await users_collection.find_one({"_id": ObjectId(user_id)})
-    if user:
-        return {"kanban_id": user.get("kanban_id")}
-    raise HTTPException(status_code=404, detail="User not found")
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the user already has a kanban
+    kanban = await kanban_collection.find_one({"user_id": user_id})
+    
+    if kanban:
+        return {"kanban_id": str(kanban["_id"])}  # Return existing kanban ID
+
+    # Create a new kanban if none exists
+    new_kanban = KanbanBoard(user_id=user_id)  # Asegúrate de que el modelo KanbanBoard tenga un campo user_id
+    kanban_dict = new_kanban.model_dump(by_alias=True, exclude={"board_id"})
+    result = await kanban_collection.insert_one(kanban_dict)
+    kanban_dict["_id"] = str(result.inserted_id)
+
+    return {"kanban_id": kanban_dict["_id"]}  # Return new kanban ID
