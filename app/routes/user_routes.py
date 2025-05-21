@@ -5,6 +5,7 @@ from app.database import database
 from app.models.user import User, LoginCredentials, RegisterCredentials, Location
 from bson import ObjectId
 from app.models.schedule import Schedule  # Asegúrate de que el modelo Schedule esté importado
+from app.models.kanbanBoard import KanbanBoard  # Agregar esta importación al inicio del archivo junto con las otras importaciones
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -16,6 +17,7 @@ flashcard_decks_collection = database["flashcard_decks"]  # Reference to flashca
 courses_collection = database["courses"]  # Reference to courses collection for fetching user's courses
 notes_collection = database["notes"]  # Reference to notes collection for fetching user's notes
 schedules_collection = database["schedules"]  # Reference to schedules collection for fetching user's schedules
+kanban_collection = database["kanban_boards"]  # Agregar esta línea junto con las otras colecciones
 
 # Generate user flashcards
 import flashcards as fc
@@ -657,21 +659,28 @@ async def get_or_create_user_schedule(user_id: str):
 # Get or create a kanban for a specific user
 @router.get("/{user_id}/kanban")
 async def get_or_create_user_kanban(user_id: str):
-    # Check if the user exists
-    user = await users_collection.find_one({"_id": ObjectId(user_id)})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        # Check if the user exists
+        user = await users_collection.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    # Check if the user already has a kanban
-    kanban = await kanban_collection.find_one({"user_id": user_id})
-    
-    if kanban:
-        return {"kanban_id": str(kanban["_id"])}  # Return existing kanban ID
+        # Check if the user already has a kanban
+        kanban = await kanban_collection.find_one({"user_id": user_id})
+        
+        if kanban:
+            return {"kanban_id": str(kanban["_id"])}  # Return existing kanban ID
 
-    # Create a new kanban if none exists
-    new_kanban = KanbanBoard(user_id=user_id)  # Asegúrate de que el modelo KanbanBoard tenga un campo user_id
-    kanban_dict = new_kanban.model_dump(by_alias=True, exclude={"board_id"})
-    result = await kanban_collection.insert_one(kanban_dict)
-    kanban_dict["_id"] = str(result.inserted_id)
+        # Create a new kanban if none exists
+        new_kanban = KanbanBoard(
+            name="Personal Board",
+            team_id=user_id,  # Using user_id as team_id for personal boards
+            user_id=user_id
+        )
+        kanban_dict = new_kanban.model_dump(by_alias=True, exclude={"board_id"})
+        result = await kanban_collection.insert_one(kanban_dict)
+        kanban_dict["_id"] = str(result.inserted_id)
 
-    return {"kanban_id": kanban_dict["_id"]}  # Return new kanban ID
+        return {"kanban_id": kanban_dict["_id"]}  # Return new kanban ID
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
