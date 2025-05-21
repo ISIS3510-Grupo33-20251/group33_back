@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List
 from datetime import datetime
-
+# S
 class GradeEntry(BaseModel):
     name: str
     percentage: float
