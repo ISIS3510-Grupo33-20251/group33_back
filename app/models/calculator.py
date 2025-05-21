@@ -1,20 +1,19 @@
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Optional
 from datetime import datetime
-# S
+
 class GradeEntry(BaseModel):
     name: str
     percentage: float
-    value: float
+    grade: float
 
 class CalculatorSubject(BaseModel):
-    subject_id: str = Field(default=None, alias="_id")
+    calculator_id: Optional[str] = Field(default=None, alias="_id")
     subject_name: str
-    grades: List[GradeEntry] = []
-    is_modo_100: bool = False
-    created_date: datetime
-    last_modified: datetime
     owner_id: str
+    entries: List[GradeEntry] = []
+    created_date: Optional[datetime] = None
+    last_modified: Optional[datetime] = None
 
     class Config:
         from_attributes = True

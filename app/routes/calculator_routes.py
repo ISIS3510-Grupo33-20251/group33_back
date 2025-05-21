@@ -11,7 +11,7 @@ calculator_collection = database["calculator"]
 # Crear materia con su calculadora
 @router.post("/", response_model=CalculatorSubject)
 async def create_subject(subject: CalculatorSubject):
-    subject_dict = subject.model_dump(by_alias=True, exclude={"subject_id"})
+    subject_dict = subject.model_dump(by_alias=True, exclude={"calculator_id"})
     subject_dict["created_date"] = datetime.utcnow()
     subject_dict["last_modified"] = datetime.utcnow()
     result = await calculator_collection.insert_one(subject_dict)
