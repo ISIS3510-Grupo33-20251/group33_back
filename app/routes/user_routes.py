@@ -653,3 +653,11 @@ async def get_or_create_user_schedule(user_id: str):
     schedule_dict["_id"] = str(result.inserted_id)
 
     return {"schedule_id": schedule_dict["_id"]}  # Return new schedule ID
+
+# Get user's kanban ID
+@router.get("/{user_id}/kanban")
+async def get_user_kanban(user_id: str):
+    user = await users_collection.find_one({"_id": ObjectId(user_id)})
+    if user:
+        return {"kanban_id": user.get("kanban_id")}
+    raise HTTPException(status_code=404, detail="User not found")
