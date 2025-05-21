@@ -1,4 +1,5 @@
 import uuid
+import logging
 
 from fastapi import APIRouter, HTTPException, Path
 from app.database import database
@@ -660,17 +661,22 @@ async def get_or_create_user_schedule(user_id: str):
 @router.get("/{user_id}/kanban")
 async def get_or_create_user_kanban(user_id: str):
     try:
+        logging.info(f"Attempting to get/create kanban board for user: {user_id}")
+        
         # Check if the user exists
         user = await users_collection.find_one({"_id": ObjectId(user_id)})
         if not user:
+            logging.error(f"User not found: {user_id}")
             raise HTTPException(status_code=404, detail="User not found")
 
         # Check if the user already has a kanban
         kanban = await kanban_collection.find_one({"user_id": user_id})
         
         if kanban:
-            return {"kanban_id": str(kanban["_id"])}  # Return existing kanban ID
+            logging.info(f"Found existing kanban board for user: {user_id}")
+            return {"kanban_id": str(kanban["_id"])}
 
+        logging.info(f"Creating new kanban board for user: {user_id}")
         # Create a new kanban if none exists
         new_kanban = KanbanBoard(
             name="Personal Board",
@@ -679,8 +685,15 @@ async def get_or_create_user_kanban(user_id: str):
         )
         kanban_dict = new_kanban.model_dump(by_alias=True, exclude={"board_id"})
         result = await kanban_collection.insert_one(kanban_dict)
+        
+        if not result.inserted_id:
+            logging.error(f"Failed to create kanban board for user: {user_id}")
+            raise HTTPException(status_code=500, detail="Failed to create kanban board")
+            
         kanban_dict["_id"] = str(result.inserted_id)
-
-        return {"kanban_id": kanban_dict["_id"]}  # Return new kanban ID
+        logging.info(f"Successfully created kanban board for user: {user_id}")
+        return {"kanban_id": kanban_dict["_id"]}
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Error in get_or_create_user_kanban: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
