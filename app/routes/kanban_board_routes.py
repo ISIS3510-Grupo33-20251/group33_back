@@ -6,7 +6,6 @@ from bson import ObjectId
 router = APIRouter(prefix="/kanban", tags=["Kanban Board"])
 
 kanban_collection = database["kanban_boards"]
-
 tasks_collection = database["tasks"]  # For checking task existence
 
 # Create a new Kanban board
@@ -33,6 +32,38 @@ async def get_kanban_board(board_id: str):
         board["_id"] = str(board["_id"])
         return board
     raise HTTPException(status_code=404, detail="Kanban board not found")
+
+# Add a task to the board
+@router.post("/{board_id}/tasks/{task_id}")
+async def add_task_to_board(board_id: str, task_id: str):
+    # Check if the task exists
+    task = await tasks_collection.find_one({"_id": ObjectId(task_id)})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    # Check if the board exists
+    board = await kanban_collection.find_one({"_id": ObjectId(board_id)})
+    if not board:
+        raise HTTPException(status_code=404, detail="Kanban board not found")
+
+    # Check if the task is already in the board
+    if task_id in board.get("all_tasks", []):
+        raise HTTPException(status_code=400, detail="Task already in board")
+
+    # Add task to all_tasks and open_tasks
+    result = await kanban_collection.update_one(
+        {"_id": ObjectId(board_id)},
+        {
+            "$push": {
+                "all_tasks": task_id,
+                "open_tasks": task_id
+            }
+        }
+    )
+
+    if result.modified_count:
+        return {"message": "Task added to board successfully"}
+    raise HTTPException(status_code=500, detail="Failed to add task to board")
 
 # Delete a Kanban board by ID
 @router.delete("/{board_id}")
@@ -84,4 +115,24 @@ async def move_task_in_progress_to_closed(board_id: str, task_id: str):
     )
     if result.matched_count:
         return {"message": "Task moved directly to Closed"}
+    raise HTTPException(status_code=404, detail="Board or Task not found")
+
+# Remove a task from the board
+@router.delete("/{board_id}/tasks/{task_id}")
+async def remove_task_from_board(board_id: str, task_id: str):
+    # Remove task from all lists
+    result = await kanban_collection.update_one(
+        {"_id": ObjectId(board_id)},
+        {
+            "$pull": {
+                "all_tasks": task_id,
+                "open_tasks": task_id,
+                "in_progress_tasks": task_id,
+                "in_review_tasks": task_id,
+                "closed_tasks": task_id
+            }
+        }
+    )
+    if result.modified_count:
+        return {"message": "Task removed from board successfully"}
     raise HTTPException(status_code=404, detail="Board or Task not found")
