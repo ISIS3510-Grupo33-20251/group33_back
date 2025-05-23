@@ -52,3 +52,16 @@ async def delete_subject(subject_id: str):
     if result.deleted_count:
         return {"message": "Subject deleted successfully"}
     raise HTTPException(status_code=404, detail="Subject not found")
+
+@router.delete("/user/{owner_id}")
+async def delete_subjects_by_user(owner_id: str):
+    subjects = await calculator_collection.find({"owner_id": owner_id}).to_list(100)
+    if not subjects:
+        raise HTTPException(status_code=404, detail="No subjects found for this user")
+
+    deleted_count = 0
+    for subject in subjects:
+        result = await calculator_collection.delete_one({"_id": subject["_id"]})
+        deleted_count += result.deleted_count
+
+    return {"message": f"Deleted {deleted_count} subject(s) for user {owner_id}"}
