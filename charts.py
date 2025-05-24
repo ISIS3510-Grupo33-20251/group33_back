@@ -126,5 +126,39 @@ def generar_graficos():
     fig7.update_layout(title="Hours with the most scheduled meetings",
                        xaxis_title="Hour of the day",
                        yaxis_title="Number of meetings scheduled")
+    
+    # Gráfico 8: Porcentaje de reminders eliminados
+    reminder_creates = 0
+    reminder_deletes = 0
+    
+    for url, method, response in zip(urls, methods, responses):
+        if "reminders" in url and response == 200:
+            if method == "POST":
+                reminder_creates += 1
+            elif method == "DELETE":
+                reminder_deletes += 1
+    
+    if reminder_creates > 0:
+        deletion_percentage = (reminder_deletes / reminder_creates) * 100
+        retention_percentage = 100 - deletion_percentage
+        
 
-    return [pio.to_html(fig, full_html=False) for fig in [fig1, fig2, fig3, fig4, fig5, fig6, fig7]]
+        fig8 = go.Figure(data=[go.Pie(
+            labels=['Retained Reminders', 'Deleted Reminders'], 
+            values=[retention_percentage, deletion_percentage],
+            hole=0.3,  # Donut chart style
+            marker_colors=['#4CAF50', '#F44336']  # Green for retained, red for deleted
+        )])
+        fig8.update_layout(
+            title=f"Reminder Retention vs Deletion Rate<br><sub>{reminder_creates} total reminders created</sub>",
+            annotations=[dict(text=f'{deletion_percentage:.1f}%<br>Deleted', x=0.5, y=0.5, font_size=16, showarrow=False)]
+        )
+    else:
+        fig8 = go.Figure(data=[go.Pie(
+            labels=['No Data'], 
+            values=[100],
+            marker_colors=['#CCCCCC']
+        )])
+        fig8.update_layout(title="Reminder Deletion Rate<br><sub>No reminder data available</sub>")
+
+    return [pio.to_html(fig, full_html=False) for fig in [fig1, fig2, fig3, fig4, fig5, fig6, fig7, fig8]]
