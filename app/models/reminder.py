@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Literal
+from typing import Literal, Optional
 from enum import Enum
 from datetime import datetime
 
@@ -17,6 +17,7 @@ class Reminder(BaseModel):
     reminder_id: str = Field(default=None, alias="_id")
     user_id: str  # The user who will receive the reminder
     entity_type: Literal["task", "meeting", "custom"]  # The type of entity the reminder is linked to
+    entity_id: Optional[str] = None
     remind_at: datetime  # When the reminder should trigger
     status: ReminderStatus  # Status of the reminder
 
